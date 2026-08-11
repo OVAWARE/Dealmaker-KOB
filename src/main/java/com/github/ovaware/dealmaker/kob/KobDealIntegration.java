@@ -40,7 +40,7 @@ final class KobDealIntegration implements DealmakerIntegration {
             }
             return;
         }
-        if (!(clause.amount() > 0.0) || (isPercent(clause) && clause.amount() > 100.0)) {
+        if (clause.amount() < 0.0 || (isPercent(clause) && !(clause.amount() > 0.0 && clause.amount() <= 100.0))) {
             errors.add("Invalid KOB resource transfer amount.");
         }
     }
@@ -53,7 +53,10 @@ final class KobDealIntegration implements DealmakerIntegration {
         var objective = scoreboard.getObjective(objectiveId);
         if (objective == null) return false;
         int available = scoreboard.getOrCreatePlayerScore(from.getScoreboardName(), objective).getScore();
-        int amount = isPercent(clause) ? (int) Math.floor(available * clause.amount() / 100.0) : (int) clause.amount();
+        // Amount zero is the explicit all-current-resource form, used for natural language such as
+        // "give me all your mana". Percent transfers never use this sentinel.
+        int amount = isPercent(clause) ? (int) Math.floor(available * clause.amount() / 100.0)
+                : clause.amount() == 0.0 ? available : (int) clause.amount();
         if (amount < 1 || available < amount) return false;
         scoreboard.getOrCreatePlayerScore(from.getScoreboardName(), objective).setScore(available - amount);
         if (clause.kind() == ClauseKind.TRANSFER_RESOURCE_AMOUNT || clause.kind() == ClauseKind.TRANSFER_RESOURCE_PERCENT) {
@@ -68,10 +71,13 @@ final class KobDealIntegration implements DealmakerIntegration {
         return """
                 Knights of Britannia is installed. Its transferable resources are mana, stamina, maximum mana, and maximum stamina.
                 For “give/pay/take/transfer N mana”, emit TRANSFER_RESOURCE_AMOUNT with assetId kob:mana.
+                For “give/take/transfer all mana”, use TRANSFER_RESOURCE_AMOUNT, assetId kob:mana, amount 0.
                 For a percentage of mana, emit TRANSFER_RESOURCE_PERCENT with assetId kob:mana.
                 For “drain/remove N mana” without crediting the other party, emit DRAIN_RESOURCE_AMOUNT with assetId kob:mana.
                 Use the matching forms with assetId kob:stamina for stamina, kob:mana_max for maximum mana,
-                and kob:stamina_max for maximum stamina. Maximum-resource transfers are permanent progression transfers.
+                and kob:stamina_max for maximum stamina. For “all maximum mana and maximum stamina”, emit two
+                TRANSFER_RESOURCE_AMOUNT clauses: kob:mana_max amount 0 and kob:stamina_max amount 0.
+                Maximum-resource transfers are permanent progression transfers.
                 Portable KOB eye items may be transferred with TRANSFER_SKILL, amount 0, and one assetId from:
                 kob:eye/left_sharingan, kob:eye/right_sharingan, kob:eye/left_rinnegan,
                 kob:eye/right_rinnegan, kob:eye/byakugan_eye, kob:eye/six_eyes, kob:eye/eye_of_balor.
