@@ -15,6 +15,7 @@ public final class DealmakerKobMod {
     public DealmakerKobMod() {
         DealmakerIntegrations.register(new KobDealIntegration());
         MinecraftForge.EVENT_BUS.addListener(DealmakerKobMod::registerCommands);
+        MinecraftForge.EVENT_BUS.register(KobDealmakerRitual.class);
     }
 
     private static void registerCommands(RegisterCommandsEvent event) {

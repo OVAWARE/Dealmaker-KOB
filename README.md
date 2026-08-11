@@ -2,6 +2,10 @@
 
 Forge 1.20.1 integration addon for Dealmaker Core and Knights of Britannia.
 
+## Dealmaker Ritual
+
+Human and Demon KOB players can gain the Dealmaker ability by being on fire while a dropped Book and Quill burns within three blocks. The book is consumed and the player receives the persistent Core Dealmaker mark.
+
 ## Soul Authority
 
 Soul holders can use these unrestricted commands:
