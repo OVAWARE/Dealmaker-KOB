@@ -27,3 +27,5 @@ The addon enables typed KOB deal assets using Dealmaker's extension kinds:
 - `TRANSFER_SKILL` with `assetId` `kob:eye/<portable-eye-id>`.
 
 Portable eye IDs are `left_sharingan`, `right_sharingan`, `left_rinnegan`, `right_rinnegan`, `byakugan_eye`, `six_eyes`, and `eye_of_balor`. These clauses move a physical KOB eye item; race, subclass, installed Palladium powers, and KOB progression are deliberately rejected.
+
+Use `TRANSFER_SKILL` with `assetId` `kob:eyes` and amount `0` to transfer every supported portable eye item the source owns. This is the AI representation of wording such as “give me your eyes.”

@@ -21,6 +21,7 @@ final class KobDealIntegration implements DealmakerIntegration {
     private static final String MANA_MAX = "kob:mana_max";
     private static final String STAMINA_MAX = "kob:stamina_max";
     private static final String EYE_PREFIX = "kob:eye/";
+    private static final String ALL_EYES = "kob:eyes";
     private static final List<String> EYES = List.of("left_sharingan", "right_sharingan", "left_rinnegan",
             "right_rinnegan", "byakugan_eye", "six_eyes", "eye_of_balor");
 
@@ -29,11 +30,16 @@ final class KobDealIntegration implements DealmakerIntegration {
         if (isResource(clause.assetId())) return clause.kind() == ClauseKind.TRANSFER_RESOURCE_AMOUNT
                 || clause.kind() == ClauseKind.TRANSFER_RESOURCE_PERCENT || clause.kind() == ClauseKind.DRAIN_RESOURCE_AMOUNT
                 || clause.kind() == ClauseKind.DRAIN_RESOURCE_PERCENT;
-        return clause.kind() == ClauseKind.TRANSFER_SKILL && clause.assetId().startsWith(EYE_PREFIX);
+        return clause.kind() == ClauseKind.TRANSFER_SKILL
+                && (ALL_EYES.equals(clause.assetId()) || clause.assetId().startsWith(EYE_PREFIX));
     }
 
     @Override
     public void validate(DealClause clause, List<String> errors) {
+        if (ALL_EYES.equals(clause.assetId())) {
+            if (clause.amount() != 0.0) errors.add("All KOB eye transfers must use amount 0.");
+            return;
+        }
         if (clause.assetId().startsWith(EYE_PREFIX)) {
             if (!EYES.contains(clause.assetId().substring(EYE_PREFIX.length())) || clause.amount() != 0.0) {
                 errors.add("Invalid KOB portable-eye transfer.");
@@ -47,6 +53,7 @@ final class KobDealIntegration implements DealmakerIntegration {
 
     @Override
     public boolean execute(DealClause clause, ServerPlayer from, ServerPlayer to) {
+        if (ALL_EYES.equals(clause.assetId())) return moveAllEyes(from, to);
         if (clause.assetId().startsWith(EYE_PREFIX)) return moveEye(clause.assetId().substring(EYE_PREFIX.length()), from, to);
         String objectiveId = objectiveId(clause.assetId());
         ServerScoreboard scoreboard = from.server.getScoreboard();
@@ -81,6 +88,9 @@ final class KobDealIntegration implements DealmakerIntegration {
                 Portable KOB eye items may be transferred with TRANSFER_SKILL, amount 0, and one assetId from:
                 kob:eye/left_sharingan, kob:eye/right_sharingan, kob:eye/left_rinnegan,
                 kob:eye/right_rinnegan, kob:eye/byakugan_eye, kob:eye/six_eyes, kob:eye/eye_of_balor.
+                “Give me your eyes”, “transfer all your eyes”, and equivalent plural wording mean TRANSFER_SKILL,
+                assetId kob:eyes, amount 0. This transfers every supported portable KOB eye item the source has;
+                it is a successful no-op when the source has no portable eye items.
                 The source must actually possess the physical eye item. Never transfer KOB race, subclass, installed powers,
                 special techniques, or transformations.
                 """;
@@ -125,6 +135,20 @@ final class KobDealIntegration implements DealmakerIntegration {
             return true;
         }
         return false;
+    }
+
+    private static boolean moveAllEyes(ServerPlayer from, ServerPlayer to) {
+        for (String eye : EYES) {
+            Item item = ForgeRegistries.ITEMS.getValue(ResourceLocation.tryParse("knights_of_britannia:" + eye));
+            if (item == null) continue;
+            for (ItemStack stack : from.getInventory().items) {
+                while (stack.is(item) && !stack.isEmpty()) {
+                    if (!to.getInventory().add(stack.copyWithCount(1))) return false;
+                    stack.shrink(1);
+                }
+            }
+        }
+        return true;
     }
 
     private static void addEnum(JsonArray values, String value) {
