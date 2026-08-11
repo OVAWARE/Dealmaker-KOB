@@ -9,6 +9,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.registries.ForgeRegistries;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 
 import java.util.List;
 
@@ -59,6 +61,34 @@ final class KobDealIntegration implements DealmakerIntegration {
         return true;
     }
 
+    @Override
+    public String aiInstructions() {
+        return """
+                Knights of Britannia is installed. Its transferable current resources are mana and stamina.
+                For “give/pay/take/transfer N mana”, emit TRANSFER_RESOURCE_AMOUNT with assetId kob:mana.
+                For a percentage of mana, emit TRANSFER_RESOURCE_PERCENT with assetId kob:mana.
+                For “drain/remove N mana” without crediting the other party, emit DRAIN_RESOURCE_AMOUNT with assetId kob:mana.
+                Use the matching STAMINA forms with assetId kob:stamina. These transfer current resource only, never maximum resource.
+                Portable KOB eye items may be transferred with TRANSFER_SKILL, amount 0, and one assetId from:
+                kob:eye/left_sharingan, kob:eye/right_sharingan, kob:eye/left_rinnegan,
+                kob:eye/right_rinnegan, kob:eye/byakugan_eye, kob:eye/six_eyes, kob:eye/eye_of_balor.
+                The source must actually possess the physical eye item. Never transfer KOB race, subclass, installed powers,
+                special techniques, transformations, or maximum mana/stamina.
+                """;
+    }
+
+    @Override
+    public void extendAiSchema(JsonObject schema) {
+        JsonObject clause = schema.getAsJsonObject("properties").getAsJsonObject("clauses")
+                .getAsJsonObject("items");
+        JsonArray kinds = clause.getAsJsonObject("properties").getAsJsonObject("kind").getAsJsonArray("enum");
+        addEnum(kinds, "TRANSFER_RESOURCE_AMOUNT");
+        addEnum(kinds, "TRANSFER_RESOURCE_PERCENT");
+        addEnum(kinds, "DRAIN_RESOURCE_AMOUNT");
+        addEnum(kinds, "DRAIN_RESOURCE_PERCENT");
+        addEnum(kinds, "TRANSFER_SKILL");
+    }
+
     private static boolean isResource(String id) {
         return MANA.equals(id) || STAMINA.equals(id);
     }
@@ -76,5 +106,10 @@ final class KobDealIntegration implements DealmakerIntegration {
             return true;
         }
         return false;
+    }
+
+    private static void addEnum(JsonArray values, String value) {
+        for (var element : values) if (value.equals(element.getAsString())) return;
+        values.add(value);
     }
 }
