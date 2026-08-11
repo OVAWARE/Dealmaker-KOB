@@ -19,6 +19,8 @@ import java.util.List;
 final class KobCommands {
     private static final String MANA = "kob.mana";
     private static final String STAMINA = "kob.stamina";
+    private static final String MANA_MAX = "kob.mana.max";
+    private static final String STAMINA_MAX = "kob.stamina.max";
     private static final List<String> EYES = List.of(
             "knights_of_britannia:left_sharingan", "knights_of_britannia:right_sharingan",
             "knights_of_britannia:left_rinnegan", "knights_of_britannia:right_rinnegan",
@@ -32,8 +34,12 @@ final class KobCommands {
                 .then(Commands.literal("kob").then(Commands.literal("soul")
                         .then(resource("take_mana", MANA, false))
                         .then(resource("take_stamina", STAMINA, false))
+                        .then(resource("take_max_mana", MANA_MAX, false))
+                        .then(resource("take_max_stamina", STAMINA_MAX, false))
                         .then(resource("drain_mana", MANA, true))
                         .then(resource("drain_stamina", STAMINA, true))
+                        .then(resource("drain_max_mana", MANA_MAX, true))
+                        .then(resource("drain_max_stamina", STAMINA_MAX, true))
                         .then(Commands.literal("extract_eye").then(Commands.argument("target", EntityArgument.player())
                                 .then(Commands.argument("eye", com.mojang.brigadier.arguments.StringArgumentType.word())
                                         .executes(context -> extractEye(context.getSource().getPlayerOrException(),
@@ -60,7 +66,7 @@ final class KobCommands {
         scoreboard.getOrCreatePlayerScore(owner.getScoreboardName(), objective).setScore(available - amount);
         scoreboard.getOrCreatePlayerScore(holder.getScoreboardName(), objective).setScore(
                 scoreboard.getOrCreatePlayerScore(holder.getScoreboardName(), objective).getScore() + amount);
-        return reply(holder, "Took " + amount + " " + (objectiveId.equals(MANA) ? "mana" : "stamina") + " from " + owner.getName().getString() + ".");
+        return reply(holder, "Took " + amount + " " + resourceName(objectiveId) + " from " + owner.getName().getString() + ".");
     }
 
     private static int extractEye(ServerPlayer holder, ServerPlayer owner, String eye) {
@@ -81,5 +87,15 @@ final class KobCommands {
     private static int reply(ServerPlayer player, String text) {
         player.sendSystemMessage(Component.literal(text).withStyle(ChatFormatting.GOLD));
         return 1;
+    }
+
+    private static String resourceName(String objective) {
+        return switch (objective) {
+            case MANA -> "mana";
+            case STAMINA -> "stamina";
+            case MANA_MAX -> "maximum mana";
+            case STAMINA_MAX -> "maximum stamina";
+            default -> "resource";
+        };
     }
 }

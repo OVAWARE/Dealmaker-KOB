@@ -8,17 +8,21 @@ Soul holders can use these unrestricted commands:
 
 - `/dealmaker kob soul take_mana <player> <amount>`
 - `/dealmaker kob soul take_stamina <player> <amount>`
+- `/dealmaker kob soul take_max_mana <player> <amount>`
+- `/dealmaker kob soul take_max_stamina <player> <amount>`
 - `/dealmaker kob soul drain_mana <player>`
 - `/dealmaker kob soul drain_stamina <player>`
+- `/dealmaker kob soul drain_max_mana <player>`
+- `/dealmaker kob soul drain_max_stamina <player>`
 - `/dealmaker kob soul extract_eye <player> <eye>`
 
-Mana and stamina use KOB's `kob.mana` and `kob.stamina` scoreboards. `extract_eye` transfers only a portable KOB eye item in the soul owner's inventory. It deliberately does not strip an installed Palladium eye power, because KOB powers include coupled tags, scoreboards, and global pools.
+Mana/Stamina and their permanent caps use KOB's `kob.mana`, `kob.stamina`, `kob.mana.max`, and `kob.stamina.max` scoreboards. `extract_eye` transfers only a portable KOB eye item in the soul owner's inventory. It deliberately does not strip an installed Palladium eye power, because KOB powers include coupled tags, scoreboards, and global pools.
 
 ## Contract Assets
 
 The addon enables typed KOB deal assets using Dealmaker's extension kinds:
 
-- `TRANSFER_RESOURCE_AMOUNT` or `TRANSFER_RESOURCE_PERCENT` with `assetId` `kob:mana` or `kob:stamina`.
+- `TRANSFER_RESOURCE_AMOUNT` or `TRANSFER_RESOURCE_PERCENT` with `assetId` `kob:mana`, `kob:stamina`, `kob:mana_max`, or `kob:stamina_max`.
 - `DRAIN_RESOURCE_AMOUNT` or `DRAIN_RESOURCE_PERCENT` with the same asset IDs.
 - `TRANSFER_SKILL` with `assetId` `kob:eye/<portable-eye-id>`.
 

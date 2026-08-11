@@ -18,6 +18,8 @@ import java.util.List;
 final class KobDealIntegration implements DealmakerIntegration {
     private static final String MANA = "kob:mana";
     private static final String STAMINA = "kob:stamina";
+    private static final String MANA_MAX = "kob:mana_max";
+    private static final String STAMINA_MAX = "kob:stamina_max";
     private static final String EYE_PREFIX = "kob:eye/";
     private static final List<String> EYES = List.of("left_sharingan", "right_sharingan", "left_rinnegan",
             "right_rinnegan", "byakugan_eye", "six_eyes", "eye_of_balor");
@@ -46,7 +48,7 @@ final class KobDealIntegration implements DealmakerIntegration {
     @Override
     public boolean execute(DealClause clause, ServerPlayer from, ServerPlayer to) {
         if (clause.assetId().startsWith(EYE_PREFIX)) return moveEye(clause.assetId().substring(EYE_PREFIX.length()), from, to);
-        String objectiveId = clause.assetId().equals(MANA) ? "kob.mana" : "kob.stamina";
+        String objectiveId = objectiveId(clause.assetId());
         ServerScoreboard scoreboard = from.server.getScoreboard();
         var objective = scoreboard.getObjective(objectiveId);
         if (objective == null) return false;
@@ -64,16 +66,17 @@ final class KobDealIntegration implements DealmakerIntegration {
     @Override
     public String aiInstructions() {
         return """
-                Knights of Britannia is installed. Its transferable current resources are mana and stamina.
+                Knights of Britannia is installed. Its transferable resources are mana, stamina, maximum mana, and maximum stamina.
                 For “give/pay/take/transfer N mana”, emit TRANSFER_RESOURCE_AMOUNT with assetId kob:mana.
                 For a percentage of mana, emit TRANSFER_RESOURCE_PERCENT with assetId kob:mana.
                 For “drain/remove N mana” without crediting the other party, emit DRAIN_RESOURCE_AMOUNT with assetId kob:mana.
-                Use the matching STAMINA forms with assetId kob:stamina. These transfer current resource only, never maximum resource.
+                Use the matching forms with assetId kob:stamina for stamina, kob:mana_max for maximum mana,
+                and kob:stamina_max for maximum stamina. Maximum-resource transfers are permanent progression transfers.
                 Portable KOB eye items may be transferred with TRANSFER_SKILL, amount 0, and one assetId from:
                 kob:eye/left_sharingan, kob:eye/right_sharingan, kob:eye/left_rinnegan,
                 kob:eye/right_rinnegan, kob:eye/byakugan_eye, kob:eye/six_eyes, kob:eye/eye_of_balor.
                 The source must actually possess the physical eye item. Never transfer KOB race, subclass, installed powers,
-                special techniques, transformations, or maximum mana/stamina.
+                special techniques, or transformations.
                 """;
     }
 
@@ -90,11 +93,21 @@ final class KobDealIntegration implements DealmakerIntegration {
     }
 
     private static boolean isResource(String id) {
-        return MANA.equals(id) || STAMINA.equals(id);
+        return MANA.equals(id) || STAMINA.equals(id) || MANA_MAX.equals(id) || STAMINA_MAX.equals(id);
     }
 
     private static boolean isPercent(DealClause clause) {
         return clause.kind() == ClauseKind.TRANSFER_RESOURCE_PERCENT || clause.kind() == ClauseKind.DRAIN_RESOURCE_PERCENT;
+    }
+
+    private static String objectiveId(String assetId) {
+        return switch (assetId) {
+            case MANA -> "kob.mana";
+            case STAMINA -> "kob.stamina";
+            case MANA_MAX -> "kob.mana.max";
+            case STAMINA_MAX -> "kob.stamina.max";
+            default -> throw new IllegalArgumentException("Unsupported KOB asset: " + assetId);
+        };
     }
 
     private static boolean moveEye(String eye, ServerPlayer from, ServerPlayer to) {
