@@ -53,8 +53,12 @@ final class KobDealIntegration implements DealmakerIntegration {
 
     @Override
     public boolean execute(DealClause clause, ServerPlayer from, ServerPlayer to) {
-        if (ALL_EYES.equals(clause.assetId())) return moveAllEyes(from, to);
-        if (clause.assetId().startsWith(EYE_PREFIX)) return moveEye(clause.assetId().substring(EYE_PREFIX.length()), from, to);
+        if (ALL_EYES.equals(clause.assetId())) return KobEyes.extractAll(from, extracted -> {
+            if (!to.getInventory().add(extracted)) to.drop(extracted, false);
+        });
+        if (clause.assetId().startsWith(EYE_PREFIX)) return KobEyes.extract(from, clause.assetId().substring(EYE_PREFIX.length()), extracted -> {
+            if (!to.getInventory().add(extracted)) to.drop(extracted, false);
+        });
         String objectiveId = objectiveId(clause.assetId());
         ServerScoreboard scoreboard = from.server.getScoreboard();
         var objective = scoreboard.getObjective(objectiveId);
@@ -124,31 +128,6 @@ final class KobDealIntegration implements DealmakerIntegration {
             case STAMINA_MAX -> "kob.stamina.max";
             default -> throw new IllegalArgumentException("Unsupported KOB asset: " + assetId);
         };
-    }
-
-    private static boolean moveEye(String eye, ServerPlayer from, ServerPlayer to) {
-        Item item = ForgeRegistries.ITEMS.getValue(ResourceLocation.tryParse("knights_of_britannia:" + eye));
-        if (item == null) return false;
-        for (ItemStack stack : from.getInventory().items) {
-            if (!stack.is(item) || !to.getInventory().add(stack.copyWithCount(1))) continue;
-            stack.shrink(1);
-            return true;
-        }
-        return false;
-    }
-
-    private static boolean moveAllEyes(ServerPlayer from, ServerPlayer to) {
-        for (String eye : EYES) {
-            Item item = ForgeRegistries.ITEMS.getValue(ResourceLocation.tryParse("knights_of_britannia:" + eye));
-            if (item == null) continue;
-            for (ItemStack stack : from.getInventory().items) {
-                while (stack.is(item) && !stack.isEmpty()) {
-                    if (!to.getInventory().add(stack.copyWithCount(1))) return false;
-                    stack.shrink(1);
-                }
-            }
-        }
-        return true;
     }
 
     private static void addEnum(JsonArray values, String value) {

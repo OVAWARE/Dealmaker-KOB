@@ -75,13 +75,10 @@ final class KobCommands {
         if (!EYES.contains(id)) return reply(holder, "Unsupported eye. Use a portable KOB eye item id without its namespace.");
         Item item = ForgeRegistries.ITEMS.getValue(new net.minecraft.resources.ResourceLocation(id));
         if (item == null) return reply(holder, "That KOB eye item is unavailable.");
-        for (ItemStack stack : owner.getInventory().items) {
-            if (!stack.is(item)) continue;
-            ItemStack extracted = stack.split(1);
+        if (!KobEyes.extract(owner, eye, extracted -> {
             if (!holder.getInventory().add(extracted)) holder.drop(extracted, false);
-            return reply(holder, "Extracted " + eye + " from " + owner.getName().getString() + ".");
-        }
-        return reply(holder, "The soul owner does not carry that portable eye item. Installed KOB eye powers are intentionally not stripped.");
+        })) return reply(holder, "The soul owner does not possess that KOB eye.");
+        return reply(holder, "Extracted " + eye + " from " + owner.getName().getString() + ".");
     }
 
     private static int reply(ServerPlayer player, String text) {
